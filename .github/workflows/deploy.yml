@@ -1,0 +1,27 @@
+name: Deploy httpd to EC2
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::008971648169:role/GitHubAction-AssumeRoleWithAction
+          aws-region: us-east-1
+
+      - name: Deploy httpd hello world via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "i-086eb6617732da8f3" \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=["sudo yum install -y httpd","echo \"<h1>Hello World from GitHub Actions</h1>\" | sudo tee /var/www/html/index.html","sudo systemctl start httpd","sudo systemctl enable httpd"]' \
+            --output text
